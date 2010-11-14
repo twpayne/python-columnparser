@@ -17,3 +17,16 @@ class ColumnParser(object):
         for key, (start, end) in self.columns.items():
             result[key] = line[start:end].rstrip()
         return result
+
+    @classmethod
+    def parse_file(self, io):
+        lines = iter(io)
+        parser = self(lines.next())
+        for line in lines:
+            yield parser.parse(line)
+
+
+if __name__ == '__main__':
+    import sys
+    for row in ColumnParser.parse_file(sys.stdin):
+        print repr(row)
