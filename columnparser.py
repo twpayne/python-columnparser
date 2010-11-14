@@ -1,6 +1,21 @@
 #!/usr/bin/python
 
+from collections import defaultdict
 import re
+
+
+INT_RE = re.compile(r'\A-?\d+\Z')
+FLOAT_RE = re.compile(r'\A-?\d+(?:\.\d*)?\Z')
+
+
+def guess_type(s):
+    if INT_RE.match(s):
+        return int
+    elif FLOAT_RE.match(s):
+        return float
+    else:
+        return str
+
 
 class ColumnParser(object):
 
@@ -28,8 +43,36 @@ class ColumnParser(object):
         for line in lines:
             yield parser.parse(line)
 
+    @classmethod
+    def autoparse_file(self, io):
+        lines = iter(io)
+        parser = self(lines.next())
+        rows = map(parser.parse, lines)
+        types = defaultdict(set)
+        for row in rows:
+            for key, value in row.items():
+                types[key].add(guess_type(value))
+        dict_mapper = DictMapper()
+        for key in parser.keys():
+            for type in (str, float, int):
+                if type in types[key]:
+                    dict_mapper[key] = type
+                    break
+        for row in rows:
+            yield dict_mapper(row)
+
+
+class DictMapper(dict):
+
+    def __call__(self, d, copy=False):
+        if copy:
+            d = d.copy()
+        for key, function in self.items():
+            if key in d:
+                d[key] = function(d[key])
+        return d
+
 
 if __name__ == '__main__':
     import sys
-    for row in ColumnParser.parse_file(sys.stdin):
-        print repr(row)
+    print repr(list(ColumnParser.autoparse_file(sys.stdin)))
