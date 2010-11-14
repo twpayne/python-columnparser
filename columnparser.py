@@ -12,6 +12,9 @@ class ColumnParser(object):
             index = m.start() + 1
         self.columns[header[index:].rstrip()] = (index, None)
 
+    def keys(self):
+        return self.columns.keys()
+
     def parse(self, line):
         result = {}
         for key, (start, end) in self.columns.items():
