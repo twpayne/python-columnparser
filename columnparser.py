@@ -15,6 +15,7 @@
 
 
 from collections import defaultdict
+from itertools import imap
 import re
 
 
@@ -51,15 +52,18 @@ class ColumnParser(object):
         return result
 
     @classmethod
-    def parse_file(self, io):
+    def parse_file(self, io, tabsize=None):
         lines = iter(io)
+        if tabsize:
+            lines = imap(lambda line: line.expandtabs(tabsize), lines)
         parser = self(lines.next())
-        for line in lines:
-            yield parser.parse(line)
+        return imap(parser.parse, lines)
 
     @classmethod
-    def autoparse_file(self, io):
+    def autoparse_file(self, io, tabsize=8):
         lines = iter(io)
+        if tabsize:
+            lines = imap(lambda line: line.expandtabs(tabsize), lines)
         parser = self(lines.next())
         rows = map(parser.parse, lines)
         types = defaultdict(set)
@@ -89,4 +93,4 @@ class DictMapper(dict):
 
 if __name__ == '__main__':
     import sys
-    print repr(list(ColumnParser.autoparse_file(sys.stdin)))
+    print repr(list(ColumnParser.autoparse_file(sys.stdin, 8)))
